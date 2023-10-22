@@ -2,6 +2,7 @@ package com.atguigu.wc;
 
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.Collector;
@@ -20,9 +21,15 @@ public class StreamWordCount {
         // 1. 创建流式的执行环境
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
+        // new 从命令行参数获取hostname和port
+        // idea在Run->Edit Configurations->Program arguments中输入 --hostname localhost --port 7777
+        ParameterTool parameterTool = ParameterTool.fromArgs(args);
+        String hostname = parameterTool.get("hostname");
+        int port = parameterTool.getInt("port");
+
         // 2. 读取文本流
         // 需要使用 $ nc -lk 7777 先监听这个端口
-       DataStreamSource<String> linegDataStreamSource = env.socketTextStream("localhost",7777);
+       DataStreamSource<String> linegDataStreamSource = env.socketTextStream(hostname,port);
 
         // 3.转换计算
         linegDataStreamSource.flatMap((String line, Collector<Tuple2<String,Long>> out) -> {
