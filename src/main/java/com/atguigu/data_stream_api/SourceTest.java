@@ -28,7 +28,11 @@ public class SourceTest {
         DataStreamSource<String> stream1 = env.readTextFile("input/click_events.txt");
         stream1.print();
 
-        // 2. 从集合中读取数据,有界数据集
+        // 2 从hdfs读取数据,有界数据集
+        DataStreamSource<String> stream2 = env.readTextFile("hdfs://header-01:8020/tmp/input/click_events.txt");
+        stream2.print();
+
+        // 3. 从集合中读取数据,有界数据集
         ArrayList<Object> nums = new ArrayList<>();
         nums.add(1);
         nums.add(2);
@@ -43,7 +47,7 @@ public class SourceTest {
         DataStreamSource<Event> eventsStream = env.fromCollection(events);
         eventsStream.print();
 
-        // 3. 从元素读取数据,有界数据集
+        // 4. 从元素读取数据,有界数据集
         DataStreamSource<Event> eventStream2 = env.fromElements(
                 new Event("Andy", "./home", 1000L),
                 new Event("Andy", "./cart", 2000L),
@@ -51,12 +55,12 @@ public class SourceTest {
         );
         eventStream2.print();
 
-        // 4. 从socket文本流读取数据,无界数据集
+        // 5. 从socket文本流读取数据,无界数据集
         // nc -lk 7777
         DataStreamSource<String> socketstream2 = env.socketTextStream("localhost", 7777);
         socketstream2.print();
 
-        // 5. 从kafka读取数据,无界数据集
+        // 6. 从kafka读取数据,无界数据集
         // 创建kafka生产者 ./bin/kafka-console-producer.sh  --broker-list 10.130.201.12:9092,10.130.201.13:9092,10.130.201.14:9092 --topic flink_clicks
         Properties properties = new Properties();
         properties.setProperty("bootstrap.servers", "10.130.201.12:9092,10.130.201.13:9092,10.130.201.14:9092");
@@ -65,6 +69,7 @@ public class SourceTest {
 
         DataStreamSource<String> kafkaDataStreamSource = env.addSource(new FlinkKafkaConsumer<String>("flink_clicks", new SimpleStringSchema(), properties));
         kafkaDataStreamSource.print();
+
 
         // 执行任务
         env.execute();
