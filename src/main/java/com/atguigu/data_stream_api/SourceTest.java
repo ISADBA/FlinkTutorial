@@ -70,6 +70,11 @@ public class SourceTest {
         DataStreamSource<String> kafkaDataStreamSource = env.addSource(new FlinkKafkaConsumer<String>("flink_clicks", new SimpleStringSchema(), properties));
         kafkaDataStreamSource.print();
 
+        // 7. TODO 进行一些数据转换操作
+
+
+        // 8. TODO 输出
+
 
         // 执行任务
         env.execute();
