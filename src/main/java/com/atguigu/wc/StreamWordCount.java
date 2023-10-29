@@ -29,7 +29,7 @@ public class StreamWordCount {
 
         // 2. 读取文本流
         // 需要使用 $ nc -lk 7777 先监听这个端口
-       DataStreamSource<String> linegDataStreamSource = env.socketTextStream(hostname,port);
+        DataStreamSource<String> linegDataStreamSource = env.socketTextStream(hostname,port);
 
         // 3.转换计算
         linegDataStreamSource.flatMap((String line, Collector<Tuple2<String,Long>> out) -> {

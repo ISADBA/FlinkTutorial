@@ -1,0 +1,4 @@
+Mary,./home,1000
+Andy,./cart,2000
+Mary,./detail,3000
+Mandy,./goods,4000
