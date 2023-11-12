@@ -25,13 +25,14 @@ public class TransformationAggregation {
                 Tuple2.of("Andy", 1000L),
                 Tuple2.of("Mandy", 2000L),
                 Tuple2.of("Fendy", 3000L),
-                Tuple2.of("Andy", 4000L)
+                Tuple2.of("Andy", 4000L),
+                Tuple2.of("Fendy", 100L)
         );
 
         // 3. 对数据进行keyby然后进行聚合
 //        stream.keyBy(event -> event.f0).sum(1).print();
 //        stream.keyBy(event -> event.f0).min("f1").print();
-//        stream.keyBy(event -> event.f0).sum("f1").print();
+        stream.keyBy(event -> event.f0).sum("f1").print();
         // 统计stream中f1的和
         SingleOutputStreamOperator<Long> sum = stream.map(event -> (Long) event.f1).keyBy(event -> "sum").sum(0);
         sum.print();
