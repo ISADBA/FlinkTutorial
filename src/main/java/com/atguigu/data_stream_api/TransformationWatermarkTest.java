@@ -7,11 +7,13 @@ import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
-import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
+import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
+import org.apache.flink.util.Collector;
 
 import java.time.Duration;
 import java.util.HashSet;
@@ -25,7 +27,7 @@ import java.util.HashSet;
  * @Create 2023/11/10 09:20
  * @Version 1.0
  */
-public class TransformationAggregationInWindow {
+public class TransformationWatermarkTest {
     public static void main(String[] args) throws Exception {
         // 1. 创建执行环境
         StreamExecutionEnvironment environment = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -60,7 +62,7 @@ public class TransformationAggregationInWindow {
                 new SerializableTimestampAssigner<Event>() {
                     @Override
                     public long extractTimestamp(Event event, long l) {
-                        System.out.println("Timestamp: " + event.timestamp);
+//                        System.out.println("Timestamp: " + event.timestamp);
                         return event.timestamp;
                     }
                 }
@@ -68,10 +70,10 @@ public class TransformationAggregationInWindow {
 //        streamWatermarks.print();
 
         // 5. 使用滚动事件时间窗口+AggregateFunction进行聚合
-        streamWatermarks.keyBy(event -> event.user)
-//                .window(TumblingProcessingTimeWindows.of(Time.seconds(5)))
-                .window(TumblingProcessingTimeWindows.of(Time.seconds(5)))
-                .aggregate(new AvgPv())
+        streamWatermarks.keyBy(event -> event.url)
+                .window(TumblingEventTimeWindows.of(Time.seconds(10)))
+//                .window(TumblingProcessingTimeWindows.of(Time.seconds(10)))
+                .process(new WatermarkTestResult())
                 .print();
 
         // 6. 执行任务
@@ -79,31 +81,26 @@ public class TransformationAggregationInWindow {
 
     }
 
-    // 实现一个AggregateFunction
-    public static class AvgPv implements AggregateFunction<Event,Tuple2<HashSet<String>, Long>, Double>{
-        // 创建累加器
+    // 自定义处理窗口函数，输出当前的水位线和窗口信息
+    public static class WatermarkTestResult extends ProcessWindowFunction<Event, String, String, TimeWindow> {
         @Override
-        public Tuple2<HashSet<String>, Long> createAccumulator() {
-            return Tuple2.of(new HashSet<>(),0L);
-        }
-
-        // 属于本窗口的数据来一条累加一次，并返回累加器
-        @Override
-        public Tuple2<HashSet<String>, Long> add(Event event, Tuple2<HashSet<String>, Long> acc) {
-            acc.f0.add(event.user);
-            acc.f1 += 1;
-            return acc;
-        }
-
-        // 窗口闭合时，增量聚合结束，将计算结果发送到下游
-        @Override
-        public Double getResult(Tuple2<HashSet<String>, Long> acc) {
-            return (double)  acc.f1/ acc.f0.size();
-        }
-
-        @Override
-        public Tuple2<HashSet<String>, Long> merge(Tuple2<HashSet<String>, Long> acc1, Tuple2<HashSet<String>, Long> acc2) {
-            return null;
+        public void process(String s, Context context, Iterable<Event> elements, Collector<String> out) throws Exception {
+            // 获取当前的水位线
+            long watermark = context.currentWatermark();
+            // 获取当前的窗口信息
+            TimeWindow window = context.window();
+            // 获取当前窗口中的数据
+            HashSet<String> users = new HashSet<>();
+            for (Event element : elements) {
+                users.add(element.user);
+            }
+            // 输出结果
+            out.collect("当前水位线为：" + watermark + "，窗口为：" + window + "，用户数为：" + elements.toString());
         }
     }
+//    水位时间是根据数据中的时间戳计算的，窗口时间是根据窗口的算法来计算，比如事件时间就是根据数据中的时间戳来计算的，处理时间就是根据系统时间来计算的
+//    当前水位线为：1699784973999，窗口为：TimeWindow{start=1699784960000, end=1699784970000}，用户数为：[Event{user='Andy', url='/home', timestamp=1699784965000}]
+//    当前水位线为：1699784973999，窗口为：TimeWindow{start=1699784960000, end=1699784970000}，用户数为：[Event{user='Mandy', url='/list', timestamp=1699784968000}]
+//    当前水位线为：1699784983999，窗口为：TimeWindow{start=1699784970000, end=1699784980000}，用户数为：[Event{user='Fendy', url='/goods', timestamp=1699784975000}]
+//    当前水位线为：1699784993999，窗口为：TimeWindow{start=1699784980000, end=1699784990000}，用户数为：[Event{user='Fendy', url='/home', timestamp=1699784985000}]
 }

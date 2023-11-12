@@ -37,7 +37,12 @@ public class TransformationReduceInWindow {
         DataStreamSource<String> stream = environment.socketTextStream("localhost", 7777);
         // 格式
         // 姓名,path,timestamp
-        // Andy,/home,1699340702
+        // Andy,/home,1699784965000
+        // Mandy,/list,1699784968000
+        // Fendy,/goods,1699784975000
+        // Fendy,/home,1699784985000
+        // Mandy,/home,1699784990000
+        // Mandy,/home,1699784995000
 
         // 3. 对将数据转换为Event对象
         DataStream<Event> streamEvent = stream.map(new MapFunction<String, Event>() {
@@ -74,7 +79,7 @@ public class TransformationReduceInWindow {
         SingleOutputStreamOperator<Tuple2<String, Long>> stream3 = stream2.keyBy(event -> event.f0)
                 // 滚动处理时间窗口，窗口大小为5s
 //                .window(TumblingProcessingTimeWindows.of(Time.seconds(5)))
-                // 滚动事件时间窗口，窗口大小为10s，偏移量为1s,这个用例有点问题，需要时间时间间隔超过10000s才会触发，原因待排查
+                // 滚动事件时间窗口，窗口大小为10s，偏移量为1s,这个用例有点问题，需要时间时间间隔超过10000s才会触发，原因待排查(原因是传入的时间戳是秒级的，需要传入毫秒级的时间戳,然后10s再乘以10，就是10000)
                 .window(TumblingEventTimeWindows.of(Time.seconds(10),Time.seconds(1)))
                 // 滑动计数窗口,窗口大小为3，步长为1，每个流接受两个消息后，就会使用当前流里面的数据触发一次计算
 //                .countWindow(3,2)
