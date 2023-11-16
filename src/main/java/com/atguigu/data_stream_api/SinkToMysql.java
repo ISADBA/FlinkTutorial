@@ -42,7 +42,7 @@ public class SinkToMysql {
                 },
                 new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
                         .withUrl("jdbc:mysql://127.0.0.1:22233/test?characterEncoding=utf8&useSSL=false")
-                        .withDriverName("com.mysql.jdbc.Driver")
+//                        .withDriverName("com.mysql.jdbc.Driver")
                         .withUsername("root")
                         .withPassword("msandbox")
                         .build()
