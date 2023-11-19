@@ -20,6 +20,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 public class DemoMysqlCdc {
     public static void main(String[] args) {
+        // --hostname 10.130.34.101 --port 3306 --username andy --password 123456 --databaseList test --tableList test.t,test.t1 --setupMode initial
         ParameterTool parameterTool = ParameterTool.fromArgs(args);
         String hostname = parameterTool.get("hostname");
         int port = parameterTool.getInt("port");
