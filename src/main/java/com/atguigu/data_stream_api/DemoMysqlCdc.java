@@ -1,8 +1,10 @@
 package com.atguigu.data_stream_api;
 
 import com.ververica.cdc.connectors.mysql.source.MySqlSource;
+import com.ververica.cdc.connectors.mysql.table.StartupOptions;
 import com.ververica.cdc.debezium.JsonDebeziumDeserializationSchema;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 /**
@@ -18,17 +20,31 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 public class DemoMysqlCdc {
     public static void main(String[] args) {
+        ParameterTool parameterTool = ParameterTool.fromArgs(args);
+        String hostname = parameterTool.get("hostname");
+        int port = parameterTool.getInt("port");
+        String username = parameterTool.get("username");
+        String password = parameterTool.get("password");
+        String databaseList = parameterTool.get("databaseList");
+        String tableList = parameterTool.get("tableList");
+        String setupMode = parameterTool.get("setupMode");
+        StartupOptions mode = StartupOptions.initial();
+        if (setupMode.equals("latest")) {
+            mode = StartupOptions.latest();
+        }
         try {
         MySqlSource<String> mySqlSource = MySqlSource.<String>builder()
-                .hostname("127.0.0.1")
-                .port(22233)
-                .databaseList("test") // set captured database
-                .tableList("test.t") // set captured table
-                .username("root")
-                .password("msandbox")
+                .hostname(hostname)
+                .port(port)
+                .scanNewlyAddedTableEnabled(true)
+                .databaseList(databaseList) // set captured database example "test"
+                .tableList(tableList) // set captured table example: "test.t,test.t1"
+                .username(username)
+                .password(password)
                 .serverTimeZone("Asia/Shanghai")
                 .serverId("5000-6000")
-                .deserializer(new JsonDebeziumDeserializationSchema(true)) // converts SourceRecord to JSON String
+                .startupOptions(mode)
+                .deserializer(new JsonDebeziumDeserializationSchema()) // converts SourceRecord to JSON String
                 .build();
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
